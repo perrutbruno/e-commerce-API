@@ -1,6 +1,14 @@
 from flask import Flask
+from service.service import BaseException, ProductNotFound
 from controller.products import products_blueprint
+from flask.json import jsonify
 app = Flask(__name__)
+
+@app.errorhandler(BaseException)
+def handle_invalid_usage(error):
+    response = jsonify(error.message)
+    response.status_code = error.status_code
+    return response
 
 app.register_blueprint(products_blueprint)
 

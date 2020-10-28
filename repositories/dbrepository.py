@@ -21,6 +21,28 @@ class BaseRepository:
 
         #Retorna o resultado da query
         return result
+
+    def raw_insert(self, query):
+        """ Método da classe pai BaseRepository que todas as classes filhas herdam em que faz um insert no banco. """
+        #Utiliza do atributo da classe BaseRepository para abertura de cursor com o banco e manipulação dos dados.
+        cursor = self.db_conn.cursor()
+
+        try:
+            #Executa a query no banco com o cursor aberto
+            cursor.execute(query)
+
+            #Faz o commit pro banco para executar as mudanças
+            self.db_conn.commit()
+        
+        except:
+            #Caso algo dê errado, faz rollback no banco para o estado anterior da execução dessa query
+            self.db_conn.rollback()
+        
+        #Fecha o cursor
+        cursor.close()
+
+        #Retorna o resultado da query
+        return 'OK'
  
  
     def select(self, fields = "*"):
@@ -90,6 +112,7 @@ class BaseRepository:
         elif type(variable) is float:
             return "%f"
  
+#product Repository
 class ProductRepository(BaseRepository):
     def __init__(self):
         super().__init__('product')
@@ -98,17 +121,17 @@ class ProductRepository(BaseRepository):
         self.raw_select("SELECT * FROM product")
  
     def get_by_product_id(self, product_id):
-        query_result =  self.raw_select(("SELECT * FROM product WHERE product_id = %s") % (product_id))
+        query_result =  self.raw_select(("SELECT * FROM product WHERE product_id = %s;") % (product_id))
 
-        return query_result 
+        return query_result
 
     def get_by_barcodes(self, barcodes):
-        query_result =  self.raw_select(("SELECT * FROM product WHERE barcodes = %s") % (barcodes))   
+        query_result =  self.raw_select(("SELECT * FROM product WHERE barcodes = %s;") % (barcodes))   
 
         return query_result
 
     def get_by_sku(self, sku):
-        query_result =  self.raw_select(("SELECT * FROM product WHERE sku = %s") % (sku))   
+        query_result =  self.raw_select(("SELECT * FROM product WHERE sku =\"%s\";") % (sku))   
 
         return query_result
 
@@ -152,6 +175,57 @@ class ProductRepository(BaseRepository):
                     
         return " WHERE {} AND product_id >= {} ORDER BY product_id LIMIT {};".format(" AND ".join(where_clause), start, num)
 
+#product_attribute Repository
+class ProdAttribRepository(BaseRepository):
+    def __init__(self):
+        super().__init__('product_attribute')
+
+    def insert(self, product_id, name, value):
+        query_result = self.raw_insert("""INSERT INTO product_attribute (product_id, name, value) VALUES ("{0}", "{1}", "{2}");""".format(product_id, name, value))
+        return query_result
+        
+    def get_all(self):
+        self.raw_select("SELECT * FROM product_attribute")
+ 
+    def get_by_product_id(self, product_id):
+        query_result =  self.raw_select(("SELECT * FROM product_attribute WHERE product_id = %s;") % (product_id))
+
+        return query_result
+
+    def get_by_name(self, name):
+        query_result =  self.raw_select(("SELECT * FROM product_attribute WHERE name = \"%s\";") % (name))   
+
+        return query_result
+
+    def get_by_value(self, value):
+        query_result =  self.raw_select(("SELECT * FROM product_attribute WHERE value = \"%s\";") % (value))   
+
+        return query_result
+
+#product_barcode Repository
+class ProdBarcodeRepository(BaseRepository):
+    def __init__(self):
+        super().__init__('product_barcode')
+
+    def insert(self, product_id, barcode):
+        query_result = self.raw_insert("""INSERT INTO product_barcode ( product_id, barcode ) VALUES ("{0}", "{1}" );""".format(product_id, barcode))
+        
+        return query_result
+        
+    def get_all(self):
+        self.raw_select("SELECT * FROM product_barcode")
+ 
+    def get_by_product_id(self, product_id):
+        query_result =  self.raw_select(("SELECT * FROM product_barcode WHERE product_id = %s;") % (product_id))
+
+        return query_result
+
+    def get_by_barcode(self, barcode):
+        query_result =  self.raw_select(("SELECT * FROM product_barcode WHERE barcode = \"%s\";") % (barcode))   
+
+        return query_result
+
+
 #dbzada = DBHandler()
 # cursor = dbzada.db_connection().cursor()
 
@@ -162,6 +236,8 @@ class ProductRepository(BaseRepository):
 #     print(r)
 
 product_repository = ProductRepository()
+
+# product_repository.raw_insert("""INSERT INTO product_attribute (product_id, name, value) VALUES ("1", "teste", "teste");""")
 
 # print(product_repository.get_by_fields({'1'}))
 
