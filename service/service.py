@@ -44,15 +44,42 @@ class ProductService:
             raise ProductNotFound(sku)
         
         return query_result
+
+    def check_if_sku_exists(self, sku):
+        query_result = self.db_repo.get_by_sku(sku)
+        print(query_result)
+
+        if query_result:
+            raise SkuAlreadyExists(sku)
+        
+        return query_result
     
     def create_product(self, title, sku, barcodes, attributes, price, description = "NULL"):
 
-        try:
-            sku_check = self.get_by_sku(sku)
-        except ProductNotFound:
-            raise SkuAlreadyExists(sku)
+        #Checa se a SKU já existe. As SKUS são únicas, então se a mesma já existir, retorna uma exception de erro com o {errortext:"SKU já existe...""} de retorno ao usuário
+        sku_check = self.check_if_sku_exists(sku)
+        
+        #Query padrão com o campo description com "" para inserção da string
+        query = f"""INSERT INTO product (title, sku, description, price, created, last_updated) VALUES (\"{title}\", \"{sku}\", \"{description}\", \"{price}\", now(), now());"""
+        
+        #Caso não tenha sido passada a description, a query deve mudar, para que insira o tipo NULL no lugar da description no banco
+        if description == "NULL":
+            query = f"""INSERT INTO product (title, sku, description, price, created, last_updated) VALUES (\"{title}\", \"{sku}\", {description}, \"{price}\", now(), now());"""
 
-        return 0
+        #Aloca na variável o resultado do insert
+        create_prod_query_result = self.db_repo.insert_into_product(query)
+
+        #Monta a query para o select com o parametro sku preenchido com a var.
+        select_query = f"""SELECT product_id FROM product WHERE sku = \"{sku}\";"""
+
+        #Aloca na var abaixo o resultado desempacotado das tuplas que o mySql retorna, retornando somente o valor do id propriamente
+        created_products_id = get_created_products_sku = self.db_repo.raw_select(select_query)[0][0]
+
+        
+        
+        
+
+        return created_products_id
     
     def get_by_fields(self, fields_values = [], where_dict_values = {}, start = 0, num = 10):
         query_result = []
@@ -81,16 +108,17 @@ class ProdAttribService:
     def __init__(self):
         self.db_repo = ProdAttribRepository()
 
-    def insert_prod_attrib(self, product_id = None, name = None, value = None):
+    def insert_prod_attrib(self, product_id = None, name = None, value = None ):
+        
         #Checa em early return se algum dos parâmetros está vazio, todos são mandatórios.
-        if product_id == None or name == None or value == None:
+        if product_id == None or value == None or name == None:
             raise ProductParamNull('product_attribute')
 
-        #Aloca na var abaixo o retorno da função get_by_prudct_id proveniente do repositório.
-        query_result = self.db_repo.insert(product_id, name, value)
+        #Cria o product id com o método insert do repositório de atributo de produto
+        query = self.db_repo.insert(product_id, name, value)
 
-        #Caso não tenha problemas com o dado, retorna o mesmo
-        return query_result
+        #Caso não tenha problemas com inserção do dado, retorna mensagem de sucesso
+        return 'product attribute criado com sucesso'
     
     def get_prod_attrib_by_id(self, product_id):
         #Tenta converter o product_id para o tipo integer e caso não consiga, da throw numa exception que retorna que o tipo de valor está errado.
@@ -148,7 +176,7 @@ class ProdBarcodeService:
         query_result = self.db_repo.insert(product_id, barcode)
 
         #Caso não tenha problemas com o dado, retorna o mesmo
-        return query_result
+        return "product barcode criado com sucesso"
 
     def get_prod_barcode_by_id(self, product_id):
         #Tenta converter o product_id para o tipo integer e caso não consiga, da throw numa exception que retorna que o tipo de valor está errado.
@@ -186,7 +214,7 @@ class ProdBarcodeService:
 
 # service = ProductService()
 
-# service.create_product('abc', 'BOT-123k4', 'SSSS', 'AA', '10.90')
+# service.create_product('csharp', 'csh-1236', 'sjjsjsjs', '10.90', '10.90')
 
 # #print(service.get_by_fields(['product_id', 'sku', 'title'],{"product_id": 1, "sku": "BOT-1234"}))
 

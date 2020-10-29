@@ -119,9 +119,18 @@ class ProductRepository(BaseRepository):
  
     def get_all(self):
         self.raw_select("SELECT * FROM product")
+
+    def get_product_id_by_sku(self, sku):
+        self.select_by_fields()
+
  
     def get_by_product_id(self, product_id):
         query_result =  self.raw_select(("SELECT * FROM product WHERE product_id = %s;") % (product_id))
+
+        return query_result
+    
+    def insert_into_product(self,query):
+        query_result = self.raw_insert(query)
 
         return query_result
 
@@ -131,7 +140,7 @@ class ProductRepository(BaseRepository):
         return query_result
 
     def get_by_sku(self, sku):
-        query_result =  self.raw_select(("SELECT * FROM product WHERE sku =\"%s\";") % (sku))   
+        query_result =  self.raw_select(("SELECT * FROM product WHERE sku = \"%s\";") % (sku))   
 
         return query_result
 
@@ -154,7 +163,6 @@ class ProductRepository(BaseRepository):
         if where != {}:
             query += self.__generate_where(where, start, num)
 
-        print(query)
         #Executa no db query acima com os valores substituídos pelos valores das variáveis no format.
         cursor.execute(query)
 
@@ -182,7 +190,7 @@ class ProdAttribRepository(BaseRepository):
 
     def insert(self, product_id, name, value):
         query_result = self.raw_insert("""INSERT INTO product_attribute (product_id, name, value) VALUES ("{0}", "{1}", "{2}");""".format(product_id, name, value))
-        return query_result
+        return """INSERT INTO product_attribute (product_id, name, value) VALUES ("{0}", "{1}", "{2}");""".format(product_id, name, value)
         
     def get_all(self):
         self.raw_select("SELECT * FROM product_attribute")

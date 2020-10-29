@@ -1,11 +1,14 @@
 from flask import Flask,Blueprint, request
-from service.service import ProductService, ProdAttribService
+from service.service import ProductService, ProdAttribService, ProdBarcodeService
 from utils.errorhandler import ProductNotFound
 
 
 products_blueprint = Blueprint('products', __name__)
 
+#Instancia os objetos das services para manipulação de dados do banco
 product_service = ProductService()
+product_attrib_service = ProdAttribService()
+product_barcode_service = ProdBarcodeService()
 
 @products_blueprint.route('/api/products/<product_id>', methods=['GET'])
 def products_by_id(product_id):
@@ -21,17 +24,31 @@ def create_products():
             title = req_data['title']
             sku = req_data['sku']
 
-            for barcode in req_data['barcodes']:
-                barcodes = req_data['barcodes']
+            for barcodes in req_data['barcodes']:
+                barcode = barcodes
 
             description = req_data['barcodes'] or "NULL"
             attributes = req_data['attributes']
             price = req_data['price']
 
-            return str(product_service.create_product(title, sku, barcode, attributes, price))
+            #Cria o produto e retorna o id do mesmo
+            created_product = product_service.create_product(title, sku, barcode, attributes, price)
 
+            #Para cada atributo passado na requisição JSON, desempacota os mesmos e cria o atributo do produto no banco com insert.
+            for attribute in attributes:
+                name = attribute['name']
+                value = attribute['value']
+                
+                #Usa do id retornado na função create_product para vincular ao product attribute e cria na tabela o registro
+                product_attrib_service.insert_prod_attrib(created_product, name, value)
 
+            
+            #Usa do id retornado na função create_product para vincular ao product barcode e cria na tabela o registro
+            product_barcode_service.insert_prod_barcode(created_product, barcode)
+            
+            
             return "45", 200
+            
         except KeyError as missing_param:
             return 'KEYERROR'
 
