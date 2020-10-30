@@ -17,6 +17,10 @@ class ProductNotFound(BaseException):
     def __init__(self, product_id):
        super().__init__(f"Can't find product ({product_id})", 404)
 
+class ProductDoesntExist(BaseException):
+    def __init__(self, product_id):
+       super().__init__(f"Product with productId ({product_id}) does not exist", 404)
+
 #Informa que o SKU já existe
 class SkuAlreadyExists(BaseException):
     def __init__(self, sku):
@@ -33,6 +37,6 @@ class ProductIdNotInteger(BaseException):
 
 #Informa que os parâmetros devem ser preenchidos
 class ProductParamNull(BaseException):
-    def __init__(self, table):
-       super().__init__(f"{table} fields must not be null", 400)
+    def __init__(self, value):
+       super().__init__(f"Invalid {value}, can not be null", 400)
 

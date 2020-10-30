@@ -1,6 +1,6 @@
 import json 
 from repositories.dbrepository import BaseRepository, ProductRepository, ProdBarcodeRepository, ProdAttribRepository
-from utils.errorhandler import BaseException, ProductIdNotInteger, ProductNotFound, ProductParamNull, SkuAlreadyExists
+from utils.errorhandler import BaseException, ProductIdNotInteger, ProductDoesntExist, ProductNotFound, ProductParamNull, SkuAlreadyExists
 
 # -*- coding: utf-8 -*-
 
@@ -8,6 +8,32 @@ from utils.errorhandler import BaseException, ProductIdNotInteger, ProductNotFou
 class ProductService:
     def __init__(self):
         self.db_repo = ProductRepository()
+
+    def get_sku(self, product_id):
+        
+        query = "SELECT sku from product where product_id = {0}".format(product_id)
+
+        query_result = self.db_repo.raw_select(query)
+
+        return query_result
+
+    def delete_product(self, product_id):
+        
+        #Aloca na var abaixo o retorno da função get_by_product_id proveniente do repositório.
+        query_result = self.db_repo.get_by_product_id(product_id)
+
+        #Verifica com early return se o retorno da função foi negativo ou vazio (quando não acha o dado no banco) e caso tenha sido, da throw na exception
+        if not query_result:
+            raise ProductDoesntExist(product_id)
+
+        self.db_repo.raw_delete('product',f'product_id = \"{product_id}\";')
+
+        self.db_repo.raw_delete('product_attribute',f'product_id = \"{product_id}\";')
+
+        self.db_repo.raw_delete('product_barcode',f'product_id = \"{product_id}\";')
+
+        #Caso não tenha problemas com o dado, retorna o mesmo
+        return query_result
     
     def get_product_by_id(self, product_id):
         #Tenta converter o product_id para o tipo integer e caso não consiga, da throw numa exception que retorna que o tipo de valor está errado.
@@ -25,6 +51,55 @@ class ProductService:
 
         #Caso não tenha problemas com o dado, retorna o mesmo
         return query_result
+    
+    def update_product_by_id(self, product_id, params_dict):
+
+        params_list_converted = []
+
+        params_list_values_converted = []
+
+        converted_params = {}
+
+        if 'sku' not in params_dict.keys():
+            raise ProductParamNull('sku')
+
+        #Aloca o valor de SKU da requisição na var abaixo
+        sku = params_dict['sku']
+
+        #pega o valor da sku do product_id referido
+        actual_sku = self.get_sku(product_id)[0][0]
+
+        #Compara em early return se a sku é diferente da sku do projeto para fazer a checagem se a SKU já existe em outro produto
+        if sku != actual_sku:
+            existant_sku = self.check_if_sku_exists(sku)
+
+        #Checa se existe o parâmetro atributos no dicionário de parâmetros e aloca o mesmo em uma var à parte e o retira do dict
+        if 'attributes' in params_dict.keys():
+            attributes = params_dict['attributes']
+            params_dict.pop('attributes')
+        
+        #Checa se existe o parâmetro barcode no dicionário de parâmetros e aloca o mesmo em uma var à parte e o retira do dict
+        if 'barcodes' in params_dict.keys():
+            barcodes = params_dict['barcodes']
+            params_dict.pop('barcodes')
+
+        #Para cada índice de chaves do dicionário de parâmetros, aloca o mesmo em uma lista à parte só com os keys do dict
+        for param in params_dict.keys():
+            params_list_converted.append(param)
+
+        #Mesma coisa que a func acima, porém só com os valores
+        for value in params_dict.values():
+            params_list_values_converted.append(value)
+        
+        #Adiciona numa lista as chaves e valores em formato de dicionário em um outro dicionário "limpo".
+        for index in range(0, len(params_list_converted)):
+            converted_params[params_list_converted[index]] = params_list_values_converted[index]
+
+        where_param = {'product_id':product_id}
+        
+        update_product = self.db_repo.update(converted_params, where_param)
+
+        return 'Produto alterado com sucesso'
     
     def get_by_barcodes(self, barcodes):
         #Aloca na var abaixo o retorno da função get_by_barcodes proveniente do repositório.
@@ -47,7 +122,6 @@ class ProductService:
 
     def check_if_sku_exists(self, sku):
         query_result = self.db_repo.get_by_sku(sku)
-        print(query_result)
 
         if query_result:
             raise SkuAlreadyExists(sku)
@@ -73,11 +147,7 @@ class ProductService:
         select_query = f"""SELECT product_id FROM product WHERE sku = \"{sku}\";"""
 
         #Aloca na var abaixo o resultado desempacotado das tuplas que o mySql retorna, retornando somente o valor do id propriamente
-        created_products_id = get_created_products_sku = self.db_repo.raw_select(select_query)[0][0]
-
-        
-        
-        
+        created_products_id = self.db_repo.raw_select(select_query)[0][0]
 
         return created_products_id
     
@@ -97,25 +167,42 @@ class ProductService:
         except Exception as exc:
             return error_return
         
-        #Checa se o resultado foi vazio, caso tenha retornado vazio, o produto não foi encontrado e então a service retorna o json de erro
-        if query_result == []:
+        #Checa em early return se o resultado foi vazio, caso tenha retornado vazio, o produto não foi encontrado e então a service retorna o json de erro
+        if not query_result:
             return error_return
-        else:
-            return query_result
+
+        return query_result
 
 #product_attribute Service
 class ProdAttribService:
     def __init__(self):
         self.db_repo = ProdAttribRepository()
 
-    def insert_prod_attrib(self, product_id = None, name = None, value = None ):
+    def update_product_attribute(self, attributes, product_id):
+        where_param = {'product_id':product_id}
         
-        #Checa em early return se algum dos parâmetros está vazio, todos são mandatórios.
-        if product_id == None or value == None or name == None:
-            raise ProductParamNull('product_attribute')
+        update_product_attribute = self.db_repo.update(attributes, where_param, 'product_attribute')
 
-        #Cria o product id com o método insert do repositório de atributo de produto
-        query = self.db_repo.insert(product_id, name, value)
+        return True
+    
+    def delete_prod_attrib(self, product_id):
+        #Utiliza do método delete_prod_attrib do repositório para enviar o parâmetro de product_id para montagem da query e delete dos registros no banco de dados
+        query_result = self.db_repo.delete_product_attributes(product_id)
+
+        return query_result
+
+    def insert_prod_attrib(self, product_id = None, name = None, value = None ):
+        #Checa em early return se algum dos parâmetros está vazio, todos são mandatórios.
+        #Poderia ter usado: if product_id == None or value == None or name == None, porém preciso testá-los individualmente para retornar o valor certo para a Exception
+        if product_id == None:
+            raise ProductParamNull('product_id')
+        elif value == None:
+            raise ProductParamNull('value')
+        elif name == None:
+            raise ProductParamNull('name')
+
+        #Cria o atributo com o product id, com o método insert do repositório de atributo de produto
+        query = self.db_repo.insert_attribute(product_id, name, value)
 
         #Caso não tenha problemas com inserção do dado, retorna mensagem de sucesso
         return 'product attribute criado com sucesso'
@@ -166,17 +253,25 @@ class ProdAttribService:
 class ProdBarcodeService:
     def __init__(self):
         self.db_repo = ProdBarcodeRepository()
+    
+    def delete_prod_barcode(self, product_id):
+        #Utiliza do método delete_prod_barcode do repositório para enviar o parâmetro de product_id para montagem da query e delete dos registros no banco de dados
+        query_result = self.db_repo.delete_product_barcodes(product_id)
+
+        return query_result
 
     def insert_prod_barcode(self, product_id = None, barcode = None):
         #Checa em early return se algum dos parâmetros está vazio, todos são mandatórios.
-        if product_id == None or barcode == None:
-            raise ProductParamNull('product_barcode')
+        if product_id == None:
+            raise ProductParamNull('product_id')
+        elif barcode == None:
+            raise ProductParamNull('barcode')
 
-        #Aloca na var abaixo o retorno da função get_by_prudct_id proveniente do repositório.
-        query_result = self.db_repo.insert(product_id, barcode)
+        #Aloca na var abaixo o retorno da função proveniente do repositório.
+        query_result = self.db_repo.insert_barcode(product_id, barcode)
 
         #Caso não tenha problemas com o dado, retorna o mesmo
-        return "product barcode criado com sucesso"
+        return query_result
 
     def get_prod_barcode_by_id(self, product_id):
         #Tenta converter o product_id para o tipo integer e caso não consiga, da throw numa exception que retorna que o tipo de valor está errado.
@@ -206,17 +301,4 @@ class ProdBarcodeService:
 
         #Caso não tenha problemas com o dado, retorna o mesmo
         return query_result
-
             
-        
-
-
-
-# service = ProductService()
-
-# service.create_product('csharp', 'csh-1236', 'sjjsjsjs', '10.90', '10.90')
-
-# #print(service.get_by_fields(['product_id', 'sku', 'title'],{"product_id": 1, "sku": "BOT-1234"}))
-
-# print(service.get_by_fields(['product_id', 'sku', 'title']))
-

@@ -21,6 +21,20 @@ class BaseRepository:
 
         #Retorna o resultado da query
         return result
+    
+    def raw_delete(self, table, statement):
+        #Utiliza do atributo da classe BaseRepository para abertura de cursor com o banco e manipulação dos dados.
+        cursor = self.db_conn.cursor()
+
+        query = "DELETE FROM {0} where {1}".format(table,statement)
+        
+        #Executa a query no banco com o cursor aberto
+        cursor.execute(query)
+
+        #Faz o commit pro banco para executar as mudanças
+        self.db_conn.commit()
+
+        return 'OK'
 
     def raw_insert(self, query):
         """ Método da classe pai BaseRepository que todas as classes filhas herdam em que faz um insert no banco. """
@@ -72,7 +86,7 @@ class BaseRepository:
         #Retorna os resultados da query
         return query_result
  
-    def update(self, fieldsValues, whereClause):
+    def update(self, fieldsValues, whereClause, table = 'product'):
         #Utiliza do atributo da classe BaseRepository para abertura de cursor com o banco e manipulação dos dados.
         cursor = self.db_conn.cursor()
 
@@ -83,11 +97,16 @@ class BaseRepository:
         for field in fieldsValues:
             values_masks.append(f"{field} = \"{fieldsValues[field]}\"")
         for key, value in whereClause.items():
+            value = str(value)
             if self.get_type(value) == '%s':
                 values_where_masks.append(f"{key} = \"{value}\"")
 
         #Monta a query com os parametros formatados
-        query = "UPDATE {0} SET {1} WHERE {2}".format(self.table, ', '.join(values_masks), ' AND '.join(values_where_masks))
+        query = "UPDATE {0} SET {1}, last_updated = now() WHERE {2};".format(table, ', '.join(values_masks), ' AND '.join(values_where_masks))
+
+        #Em early return, checa se está dando update em outra tabela e caso sim, altera a query, retirando o parametro last_updated
+        if table != 'product':
+            query = "UPDATE {0} SET {1} WHERE {2};".format(table, ', '.join(values_masks), ' AND '.join(values_where_masks))
 
         #Executa no db query acima com os valores substituídos pelos valores das variáveis no format.
         cursor.execute(query)
@@ -100,6 +119,7 @@ class BaseRepository:
 
         #Fecha cursor aberto para manipulação dos dados do db, liberando o mesmo.
         cursor.close()
+
 
         #Retorna o valor de mudanças no banco
         return af_rows + ' affected rows no banco'
@@ -119,15 +139,14 @@ class ProductRepository(BaseRepository):
  
     def get_all(self):
         self.raw_select("SELECT * FROM product")
-
-    def get_product_id_by_sku(self, sku):
-        self.select_by_fields()
-
  
     def get_by_product_id(self, product_id):
         query_result =  self.raw_select(("SELECT * FROM product WHERE product_id = %s;") % (product_id))
 
         return query_result
+    
+    def set_by_product_id(self, product_id):
+        return 0
     
     def insert_into_product(self,query):
         query_result = self.raw_insert(query)
@@ -139,8 +158,8 @@ class ProductRepository(BaseRepository):
 
         return query_result
 
-    def get_by_sku(self, sku):
-        query_result =  self.raw_select(("SELECT * FROM product WHERE sku = \"%s\";") % (sku))   
+    def get_by_sku(self, sku, value = "*"):
+        query_result =  self.raw_select((f"SELECT {value} FROM product WHERE sku = \"%s\";") % (sku))   
 
         return query_result
 
@@ -188,13 +207,23 @@ class ProdAttribRepository(BaseRepository):
     def __init__(self):
         super().__init__('product_attribute')
 
-    def insert(self, product_id, name, value):
+    def insert_attribute(self, product_id, name, value):
         query_result = self.raw_insert("""INSERT INTO product_attribute (product_id, name, value) VALUES ("{0}", "{1}", "{2}");""".format(product_id, name, value))
         return """INSERT INTO product_attribute (product_id, name, value) VALUES ("{0}", "{1}", "{2}");""".format(product_id, name, value)
         
     def get_all(self):
-        self.raw_select("SELECT * FROM product_attribute")
+        query_result = self.raw_select("SELECT * FROM product_attribute")
+
+        return query_result
  
+    def delete_product_attributes(self, product_id):
+
+        statement = "product_id = \"{0}\";".format(product_id)
+
+        query_result = self.raw_delete('product_attribute', statement)
+
+        return query_result
+
     def get_by_product_id(self, product_id):
         query_result =  self.raw_select(("SELECT * FROM product_attribute WHERE product_id = %s;") % (product_id))
 
@@ -215,8 +244,16 @@ class ProdBarcodeRepository(BaseRepository):
     def __init__(self):
         super().__init__('product_barcode')
 
-    def insert(self, product_id, barcode):
-        query_result = self.raw_insert("""INSERT INTO product_barcode ( product_id, barcode ) VALUES ("{0}", "{1}" );""".format(product_id, barcode))
+    def delete_product_barcodes(self, product_id):
+
+        statement = "product_id = \"{0}\";".format(product_id)
+
+        query_result = self.raw_delete('product_barcode', statement)
+
+        return query_result
+
+    def insert_barcode(self, product_id, barcode):
+        query_result = self.raw_insert("""INSERT INTO product_barcode ( product_id, barcode ) VALUES ("{0}", "{1}");""".format(product_id, barcode))
         
         return query_result
         
@@ -232,44 +269,3 @@ class ProdBarcodeRepository(BaseRepository):
         query_result =  self.raw_select(("SELECT * FROM product_barcode WHERE barcode = \"%s\";") % (barcode))   
 
         return query_result
-
-
-#dbzada = DBHandler()
-# cursor = dbzada.db_connection().cursor()
-
-# cursor.execute("SELECT * FROM product;")
-# rows = cursor.fetchall()
-
-# for r in rows:
-#     print(r)
-
-product_repository = ProductRepository()
-
-# product_repository.raw_insert("""INSERT INTO product_attribute (product_id, name, value) VALUES ("1", "teste", "teste");""")
-
-# print(product_repository.get_by_fields({'1'}))
-
-# #print(product_repository.select())
-
-# print(product_repository.select_by_fields({
-#     "title": "titles",
-#     "product_id": "1",
-#    "coluna2": 2
-# },
-#{
-    #"product_id":'1',
-    # "sku":"BOT-1234"
-#}
-#))
-
-# print(product_repository.select_by_fields({
-#    "fields": ["product_id", "sku", "title"], 
-#    "where": {
-#       "product_id": 1,
-#       "sku": "BOT-1234",
-#    }
-# }))
- 
-#product_repository.get_all()
-
-#product_repository.get_by_product_id("12345")
