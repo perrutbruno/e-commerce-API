@@ -31,24 +31,12 @@ def products_by_id(product_id):
         #Atualiza o produto
         product_service.update_product_by_id(product_id, params_dict)
 
-        #Se o parâmetro de atributos estiver preenchido, entra no bloco
-        if 'attributes' in req_data.keys():
+        #Atualiza o atributo de produto
+        product_attrib_service.update_prodattrib(req_data, product_id)
 
-            #Deleta todos os atributos do produto. Escolhi deletá-los e readicioná-los para que o usuário consiga alterar valores escritos errados, como "colo" no lugar de "color", por exemplo.
-            product_attrib_service.delete_prod_attrib(product_id)
-
-            #Para cada parâmetro na lista de atributos passados em JSON, insere na tabela novamente.
-            for attribute in req_data['attributes']:
-                #Insere o atributo no product_id referenciado
-                product_attrib_service.insert_prod_attrib(product_id, attribute['name'], attribute['value'])
+        #Atualiza o barcode
+        product_barcode_service.update_prodbarcode(req_data, product_id)
         
-        if 'barcodes' in req_data.keys():
-            #Deleta todos os atributos do produto. Escolhi deletá-los e readicioná-los para que o usuário consiga alterar valores escritos errados, como "colo" no lugar de "color", por exemplo.
-            product_barcode_service.delete_prod_barcode(product_id)
-            for barcode in req_data['barcodes']:
-                #Para cada barcode passado na lista, insere o mesmo no banco no product_id enviado.
-                product_barcode_service.insert_prod_barcode(product_id, str(barcode))
-
         return str(True)
 
     elif request.method == "DELETE":
@@ -58,7 +46,7 @@ def products_by_id(product_id):
 
 
 @products_blueprint.route('/api/products', methods=['POST'])
-def create_products():
+def products():
     if request.is_json:
         try:
             req_data = request.get_json()
@@ -87,7 +75,6 @@ def create_products():
             
             #Usa do id retornado na função create_product para vincular ao product barcode e cria na tabela o registro
             product_barcode_service.insert_prod_barcode(created_product, barcode)
-            
             
             return "45", 200
             

@@ -178,10 +178,17 @@ class ProdAttribService:
     def __init__(self):
         self.db_repo = ProdAttribRepository()
 
-    def update_product_attribute(self, attributes, product_id):
-        where_param = {'product_id':product_id}
-        
-        update_product_attribute = self.db_repo.update(attributes, where_param, 'product_attribute')
+    def update_prodattrib(self, req_data, product_id):
+        #Se o parâmetro de atributos estiver preenchido, entra no bloco
+        if 'attributes' in req_data.keys():
+
+            #Deleta todos os atributos do produto. Escolhi deletá-los e readicioná-los para que o usuário consiga alterar valores escritos errados, como "colo" no lugar de "color", por exemplo.
+            self.delete_prod_attrib(product_id)
+
+            #Para cada parâmetro na lista de atributos passados em JSON, insere na tabela novamente.
+            for attribute in req_data['attributes']:
+                #Insere o atributo no product_id referenciado
+                self.insert_prod_attrib(product_id, attribute['name'], attribute['value'])
 
         return True
     
@@ -253,7 +260,18 @@ class ProdAttribService:
 class ProdBarcodeService:
     def __init__(self):
         self.db_repo = ProdBarcodeRepository()
-    
+
+    def update_prodbarcode(self, req_data, product_id):
+        if 'barcodes' in req_data.keys():
+            #Deleta todos os atributos do produto. Escolhi deletá-los e readicioná-los para que o usuário consiga alterar valores escritos errados, como "colo" no lugar de "color", por exemplo.
+            self.delete_prod_barcode(product_id)
+            for barcode in req_data['barcodes']:
+                #Para cada barcode passado na lista, insere o mesmo no banco no product_id enviado.
+                self.insert_prod_barcode(product_id, str(barcode))
+        
+        return True
+
+        
     def delete_prod_barcode(self, product_id):
         #Utiliza do método delete_prod_barcode do repositório para enviar o parâmetro de product_id para montagem da query e delete dos registros no banco de dados
         query_result = self.db_repo.delete_product_barcodes(product_id)
