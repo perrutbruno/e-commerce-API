@@ -1,6 +1,7 @@
 from flask import Flask,Blueprint, request
 from service.service import ProductService, ProdAttribService, ProdBarcodeService
 from utils.errorhandler import ProductNotFound
+from flask.json import jsonify
 
 
 products_blueprint = Blueprint('products', __name__)
@@ -13,7 +14,22 @@ product_barcode_service = ProdBarcodeService()
 @products_blueprint.route('/api/products/<product_id>', methods=['GET', 'PUT', 'DELETE'])
 def products_by_id(product_id):
     if request.method == "GET":
-        return str(product_service.get_product_by_id(product_id))
+        product = product_service.get_product_by_id(product_id)
+        serialized_product = product_service.serialize_product_dict(product)
+
+        attributes = product_attrib_service.get_prod_attrib_by_id(product_id)
+        
+        serialized_attributes = product_attrib_service.serialize_productattrib_dict(attributes)
+        
+        barcode = product_barcode_service.get_prod_barcode_by_id(product_id)
+        serialized_barcode = product_barcode_service.serialize_productbarcode_dict(barcode)
+        
+        
+        serialized_product['attributes'] = serialized_attributes
+        
+        serialized_product['barcodes'] = serialized_barcode
+        
+        return jsonify(serialized_product)
 
     elif request.method == "PUT":
         product_service.get_product_by_id(product_id)
@@ -57,12 +73,14 @@ def products():
             for barcodes in req_data['barcodes']:
                 barcode = barcodes
 
-            description = req_data['barcodes'] or "NULL"
+            description = req_data['description'] or "NULL"
+
+            print(description)
             attributes = req_data['attributes']
             price = req_data['price']
 
             #Cria o produto e retorna o id do mesmo
-            created_product = product_service.create_product(title, sku, barcode, attributes, price)
+            created_product = product_service.create_product(title, sku, barcode, attributes, price, description)
 
             #Para cada atributo passado na requisição JSON, desempacota os mesmos e cria o atributo do produto no banco com insert.
             for attribute in attributes:

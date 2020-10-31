@@ -1,4 +1,4 @@
-import json 
+import json
 from repositories.dbrepository import BaseRepository, ProductRepository, ProdBarcodeRepository, ProdAttribRepository
 from utils.errorhandler import BaseException, ProductIdNotInteger, ProductDoesntExist, ProductNotFound, ProductParamNull, SkuAlreadyExists
 
@@ -8,6 +8,28 @@ from utils.errorhandler import BaseException, ProductIdNotInteger, ProductDoesnt
 class ProductService:
     def __init__(self):
         self.db_repo = ProductRepository()
+    
+    def serialize_product_dict(self, product):
+
+        from datetime import datetime
+
+        product_serialized = {}
+
+        product_serialized['product_id'] = product[0][0]
+
+        product_serialized['title'] = product[0][1] or None
+
+        product_serialized['sku'] = product[0][2]
+
+        product_serialized['description'] = product[0][3] or None
+
+        product_serialized['price'] = float(product[0][4])
+
+        product_serialized['created'] = datetime.timestamp(product[0][5])
+
+        product_serialized['lastUpdated'] = datetime.timestamp(product[0][6])
+
+        return product_serialized
 
     def get_sku(self, product_id):
         
@@ -178,6 +200,18 @@ class ProdAttribService:
     def __init__(self):
         self.db_repo = ProdAttribRepository()
 
+    def serialize_productattrib_dict(self, attributes):
+        #Declara um array de dicts conforme o tamanho de attributes
+        attributes_dict = list( {} for i in range(0, len(attributes)) )
+
+        #Conforme o tamanho de attributes aloca no array as keys e values dos atributos
+        for i in range(0, len(attributes)):
+            attributes_dict[i]['name'] = attributes[i][1]
+            attributes_dict[i]['value'] = attributes[i][2]
+
+        return attributes_dict
+    
+
     def update_prodattrib(self, req_data, product_id):
         #Se o parâmetro de atributos estiver preenchido, entra no bloco
         if 'attributes' in req_data.keys():
@@ -260,6 +294,15 @@ class ProdAttribService:
 class ProdBarcodeService:
     def __init__(self):
         self.db_repo = ProdBarcodeRepository()
+
+    def serialize_productbarcode_dict(self, barcodes):
+
+        list_of_barcodes = []
+
+        for barcode in barcodes:
+            list_of_barcodes.append(barcode[1])
+
+        return list_of_barcodes
 
     def update_prodbarcode(self, req_data, product_id):
         if 'barcodes' in req_data.keys():
