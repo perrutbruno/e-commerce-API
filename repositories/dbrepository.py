@@ -1,4 +1,4 @@
-from repositories.db import DBHandler
+from db import DBHandler
 
 class BaseRepository:
     def __init__(self, table):

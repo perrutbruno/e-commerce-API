@@ -1,6 +1,6 @@
 from flask import Flask
-from service.service import BaseException, ProductNotFound
-from controller.products import products_blueprint
+from service import BaseException, ProductNotFound
+from products import products_blueprint
 from flask.json import jsonify
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
