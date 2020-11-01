@@ -14,23 +14,32 @@ product_barcode_service = ProdBarcodeService()
 @products_blueprint.route('/api/products/<product_id>', methods=['GET', 'PUT', 'DELETE'])
 def products_by_id(product_id):
     if request.method == "GET":
+        #product é o produto retornado do banco, caso exista
         product = product_service.get_product_by_id(product_id)
+        #Tenta serializar em dict o produto para mais tarde, retornar um json do mesmo
         serialized_product = product_service.serialize_product_dict(product)
 
+        #attributes são os atributos do produto referenciado pelo id retornado do banco, caso exista
         attributes = product_attrib_service.get_prod_attrib_by_id(product_id)
-        
+        #Serializa esse retorno para dicionário
         serialized_attributes = product_attrib_service.serialize_productattrib_dict(attributes)
         
+        #Barcode é o valor de barcodes do produto referenciado pelo id
         barcode = product_barcode_service.get_prod_barcode_by_id(product_id)
+        #Serializa esse retorno para dicionário
         serialized_barcode = product_barcode_service.serialize_productbarcode_dict(barcode)
         
+        #o dicionário serialized_product recebe a chave attributes com os atributos retornados acima como valores
         serialized_product['attributes'] = serialized_attributes
         
+        #O mesmo que acima, porém com barcodes
         serialized_product['barcodes'] = serialized_barcode
         
+        #Retorna o dicionário como json
         return jsonify(serialized_product)
 
     elif request.method == "PUT":
+        #Tenta dar um get no produto pelo id, para checar se ele já existe
         product_service.get_product_by_id(product_id)
 
         #Inicia um dicionário vazio para encaixar os parâmetros enviados no JSON
@@ -62,7 +71,10 @@ def products_by_id(product_id):
 
 @products_blueprint.route('/api/products', methods=['POST','GET'])
 def products():
+    #Checa se a requisição é um json
     if request.is_json:
+
+        #Caso o método enviado seja POST, entra no bloco do try:
         if request.method == "POST":
             try:
                 req_data = request.get_json()
@@ -97,13 +109,19 @@ def products():
             except KeyError as missing_param:
                 return 'Todos os parâmetros devem ser preenchidos. Consulte a documentação para mais detalhes!',400
         
+        #Caso requisição seja GET, entra no bloco abaixo
         if request.method == "GET":
+
+            #Pega os valores passados na query string
             start = request.args['start']
             num = request.args['num']
             fields = request.args['fields']
+
+            #Declara fields_dict como dicionário auxiliar e o return_products para alocar os valores
             fields_dict = dict()
             return_products = dict()
 
+            #Caso tenha attributes como parâmetro, pega os valores de attributes no banco, remove-o de fields (que são os parâmetros de query string) e aloca o mesmo no dicionário de retorno
             if 'attributes' in fields:
                 param_fields = { "fields": ["name, value"], "where": { }}
                 prod_attributes = product_service.get_all_products(param_fields, start, num, 'product_attribute')
@@ -111,6 +129,7 @@ def products():
                 fields = fields.replace(',attributes','')
                 return_products['attributes'] = prod_attributes
 
+            #O mesmo que acima, porém para barcodes
             if 'barcodes' in fields:
                 param_fields = { "fields": ["barcode"], "where": { }}
                 barcodes = product_service.get_all_products(param_fields, start, num, 'product_barcode')
@@ -119,13 +138,16 @@ def products():
                 fields = fields.replace(',barcodes','')
                 return_products['barcodes'] = barcodes
             
+            #Separa a query sttring por , alocando os parâmetros numa lista
             fields_list = fields.split(",")
 
+            #Para cada parâmetro, adiciona-o em fields_dict dicionário com o valor 1, para que a função get_all_products monte a query usando os parâmetros passados
             for field in fields_list:
                 fields_dict[field] = 1
 
             result_product = product_service.get_all_products({ "fields": fields_dict, "where": { }}, start, num)
 
+            #Adiciona na chave items os itens retornados do banco e totalCount como a quantidade de items encontrados com o parâmetro passado na query string
             return_products['items'] = result_product
             return_products['totalCount'] = len(result_product)
 

@@ -145,9 +145,6 @@ class ProductRepository(BaseRepository):
 
         return query_result
     
-    def set_by_product_id(self, product_id):
-        return 0
-    
     def insert_into_product(self,query):
         query_result = self.raw_insert(query)
 
