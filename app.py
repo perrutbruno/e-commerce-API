@@ -10,6 +10,7 @@ def handle_invalid_usage(error):
     response = jsonify(error.message)
     response.status_code = error.status_code
     return response
+    
 
 app.register_blueprint(products_blueprint)
 

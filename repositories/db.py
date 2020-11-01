@@ -1,15 +1,17 @@
-import mysql.connector
+import mysql.connector, os
 
 #Classe modelo singleton do manuseador do banco de dados
 class DBHandler(object):
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(DBHandler, cls).__new__(cls)
+            db_host = os.getenv("DB_HOST")
+            #Pega variaveis de ambiente para manusear a conexao com o db
             cls.__db = mysql.connector.connect(
-                    host="127.0.0.1",
-                    user="bruno",
+                    host=db_host,
+                    user="hurb",
                     database="hurb_test_assignment",
-                    password="bruno"
+                    password="hurb"
                 )
         return cls.instance
 
