@@ -4,7 +4,7 @@ class TestHandler():
     #Método para enviar json em POST na api para criar usuário (sku gerado aleatoriamente)
     def create_new_user(self):
         db_host = os.environ["DB_HOST"]
-        url = f"http://{db_host}:5000/api/products"
+        url = f"http://127.0.0.1:5000/api/products"
         number = random.randint(1000,9999)
         json = {
             "title": "dummy title",
@@ -58,7 +58,7 @@ class TestHandler():
         str_fields_params = str_fields_params.replace("'","")
         str_fields_params = str_fields_params.replace(" ","")
         
-        url = f"http://{db_host}:5000/api/products?start=0&num={number}&fields={str_fields_params}"
+        url = f"http://127.0.0.1:5000/api/products?start=0&num={number}&fields={str_fields_params}"
       
         r = requests.get(url)
         return r.status_code
@@ -72,7 +72,7 @@ class TestHandler():
         
         number = random.randint(1,10)
         print(number)
-        url = f"http://{db_host}:5000/api/products/{number}"
+        url = f"http://127.0.0.1:5000/api/products/{number}"
         r = requests.get(url)
         return r.status_code
 

@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  labels:
+    app: app
+spec:
+  ports:
+    - port: 5000
+  selector:
+    app: app
+    tier: frontend
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pv-claim
+  labels:
+    app: app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app: app
+spec:
+  selector:
+    matchLabels:
+      app: app
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: app
+        tier: frontend
+    spec:
+      containers:
+      - image: docker.io/perrutbruno/deltaapi:latest
+        name: app
+        env:
+        - name: DB_HOST
+          value: app-mysql
+        - name: APP_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 5000
+          name: app
+        volumeMounts:
+        - name: app-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: app-persistent-storage
+        persistentVolumeClaim:
+          claimName: app-pv-claim

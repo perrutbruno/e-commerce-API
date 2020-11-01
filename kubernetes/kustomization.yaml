@@ -1,0 +1,7 @@
+secretGenerator:
+- name: mysql-pass
+  literals:
+  - password=hurb
+resources:
+  - mysql-deployment.yml
+  - app-deployment.yml

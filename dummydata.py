@@ -3,7 +3,7 @@ from db import *
 
 db_host = os.environ["DB_HOST"]
 
-url = f"http://{db_host}:5000/api/products"
+url = f"http://127.0.0.1:5000/api/products"
 
 def send_post(number):
     json = {
