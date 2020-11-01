@@ -163,6 +163,39 @@ class ProductRepository(BaseRepository):
 
         return query_result
 
+    def select_all_by_fields(self, params = {}, start = 0, num = 10, table = 'product'):
+        """ Praticamente uma sobrecarga do select_by_fields porém sem a parte em que eu valido se o where está vazio, para que consiga gerar o where corretamente na query"""
+        #Utiliza do atributo da classe BaseRepository para abertura de cursor com o banco e manipulação dos dados.
+        cursor = self.db_conn.cursor(dictionary=True)
+
+        fields = ["*"]
+        where = {}
+
+        if 'fields' in params:
+            fields = params['fields']
+
+        if 'where' in params:
+            where = params['where']
+
+        #Monta a query conforme variáveis e converte o fields adicionando , dentre os índices na lista
+        query = "SELECT {} FROM {}".format(', '.join(fields), table)
+
+        #Concatena o where na query
+        query += self.__generate_where_statement(start, num)
+
+        #Executa no db query acima com os valores substituídos pelos valores das variáveis no format.
+        cursor.execute(query)
+
+        #Aloca em result todos os resultados da query no banco
+        result = cursor.fetchall()
+
+        #Fecha o cursor de manipulação do db
+        cursor.close()
+
+        #Retorna o resultado
+        return result
+
+
     def select_by_fields(self, params = {}, start = 0, num = 10):
         #Utiliza do atributo da classe BaseRepository para abertura de cursor com o banco e manipulação dos dados.
         cursor = self.db_conn.cursor(dictionary=True)
@@ -194,7 +227,14 @@ class ProductRepository(BaseRepository):
         #Retorna o resultado
         return result
 
+    def __generate_where_statement(self, start, num):
+        where_clause = []
+ 
+        return " WHERE product_id >= {} ORDER BY product_id LIMIT {};".format(start, num)
+
+
     def __generate_where(self, where, start, num):
+        """ Sobrecarga do método acima, praticamente, em que eu encaixo parâmetros específicos de where na query """
         where_clause = []
 
         for column in where:

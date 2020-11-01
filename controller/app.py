@@ -3,6 +3,7 @@ from service.service import BaseException, ProductNotFound
 from controller.products import products_blueprint
 from flask.json import jsonify
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 
 @app.errorhandler(BaseException)
 def handle_invalid_usage(error):

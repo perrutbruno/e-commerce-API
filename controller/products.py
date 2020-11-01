@@ -24,7 +24,6 @@ def products_by_id(product_id):
         barcode = product_barcode_service.get_prod_barcode_by_id(product_id)
         serialized_barcode = product_barcode_service.serialize_productbarcode_dict(barcode)
         
-        
         serialized_product['attributes'] = serialized_attributes
         
         serialized_product['barcodes'] = serialized_barcode
@@ -61,41 +60,75 @@ def products_by_id(product_id):
         return str('true')
 
 
-@products_blueprint.route('/api/products', methods=['POST'])
+@products_blueprint.route('/api/products', methods=['POST','GET'])
 def products():
     if request.is_json:
-        try:
-            req_data = request.get_json()
-            
-            title = req_data['title']
-            sku = req_data['sku']
-
-            for barcodes in req_data['barcodes']:
-                barcode = barcodes
-
-            description = req_data['description'] or "NULL"
-
-            print(description)
-            attributes = req_data['attributes']
-            price = req_data['price']
-
-            #Cria o produto e retorna o id do mesmo
-            created_product = product_service.create_product(title, sku, barcode, attributes, price, description)
-
-            #Para cada atributo passado na requisição JSON, desempacota os mesmos e cria o atributo do produto no banco com insert.
-            for attribute in attributes:
-                name = attribute['name']
-                value = attribute['value']
+        if request.method == "POST":
+            try:
+                req_data = request.get_json()
                 
-                #Usa do id retornado na função create_product para vincular ao product attribute e cria na tabela o registro
-                product_attrib_service.insert_prod_attrib(created_product, name, value)
+                title = req_data['title']
+                sku = req_data['sku']
 
+                for barcodes in req_data['barcodes']:
+                    barcode = barcodes
+
+                description = req_data['description'] or "NULL"
+
+                attributes = req_data['attributes']
+                price = req_data['price']
+
+                #Cria o produto e retorna o id do mesmo
+                created_product = product_service.create_product(title, sku, barcode, attributes, price, description)
+
+                #Para cada atributo passado na requisição JSON, desempacota os mesmos e cria o atributo do produto no banco com insert.
+                for attribute in attributes:
+                    name = attribute['name']
+                    value = attribute['value']
+                    
+                    #Usa do id retornado na função create_product para vincular ao product attribute e cria na tabela o registro
+                    product_attrib_service.insert_prod_attrib(created_product, name, value)
+
+                #Usa do id retornado na função create_product para vincular ao product barcode e cria na tabela o registro
+                product_barcode_service.insert_prod_barcode(created_product, barcode)
+                
+                return "45", 200
+                
+            except KeyError as missing_param:
+                return 'Todos os parâmetros devem ser preenchidos. Consulte a documentação para mais detalhes!',400
+        
+        if request.method == "GET":
+            start = request.args['start']
+            num = request.args['num']
+            fields = request.args['fields']
+            fields_dict = dict()
+            return_products = dict()
+
+            if 'attributes' in fields:
+                param_fields = { "fields": ["name, value"], "where": { }}
+                prod_attributes = product_service.get_all_products(param_fields, start, num, 'product_attribute')
+                fields = fields.replace('attributes,','')
+                fields = fields.replace(',attributes','')
+                return_products['attributes'] = prod_attributes
+
+            if 'barcodes' in fields:
+                param_fields = { "fields": ["barcode"], "where": { }}
+                barcodes = product_service.get_all_products(param_fields, start, num, 'product_barcode')
+
+                fields = fields.replace('barcodes,','')
+                fields = fields.replace(',barcodes','')
+                return_products['barcodes'] = barcodes
             
-            #Usa do id retornado na função create_product para vincular ao product barcode e cria na tabela o registro
-            product_barcode_service.insert_prod_barcode(created_product, barcode)
-            
-            return "45", 200
-            
-        except KeyError as missing_param:
-            return 'Todos os parâmetros devem ser preenchidos. Consulte a documentação para mais detalhes!',400
+            fields_list = fields.split(",")
+
+            for field in fields_list:
+                fields_dict[field] = 1
+
+            result_product = product_service.get_all_products({ "fields": fields_dict, "where": { }}, start, num)
+
+            return_products['items'] = result_product
+            return_products['totalCount'] = len(result_product)
+
+            return jsonify(return_products)
+
 

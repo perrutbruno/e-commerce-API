@@ -9,12 +9,28 @@ class ProductService:
     def __init__(self):
         self.db_repo = ProductRepository()
     
-    def serialize_product_dict(self, product):
 
+    def serialize_product(self, attributes):
+        #Declara um array de dicts conforme o tamanho de attributes
+        attributes_dict = list( {} for i in range(0, len(attributes)) )
+
+        #Conforme o tamanho de attributes aloca no array as keys e values dos atributos
+        for i in range(0, len(attributes)):
+            attributes_dict[i]['name'] = attributes[i][1]
+            attributes_dict[i]['value'] = attributes[i][2]
+
+        return attributes_dict
+    
+    def serialize_product_dict(self, product):
+        """ Função que serializa um dicionário de produto para que consiga fazer o retorno com o método jsonify() do flask"""
+
+        #Importa libs de datetime para conversão do datetime para timestamp
         from datetime import datetime
 
+        #Declara um dicionário para alocar as chaves e os valores
         product_serialized = {}
 
+        #Aloca nas respectivas chaves os valores do product conforme a ordem de valores que o método coleta e nos entrega
         product_serialized['product_id'] = product[0][0]
 
         product_serialized['title'] = product[0][1] or None
@@ -39,8 +55,14 @@ class ProductService:
 
         return query_result
 
-    def delete_product(self, product_id):
+    def get_all_products(self,fields, start, num, table = 'product'):
+        """ Método para coletar todos os produtos conforme query_string na rota GET /api/products """
+        query_result = self.db_repo.select_all_by_fields(fields, start, num, table)
         
+        return query_result
+
+    def delete_product(self, product_id):
+        """ Método para deletar produtos conforme o id passado, com validações """
         #Aloca na var abaixo o retorno da função get_by_product_id proveniente do repositório.
         query_result = self.db_repo.get_by_product_id(product_id)
 
@@ -48,6 +70,7 @@ class ProductService:
         if not query_result:
             raise ProductDoesntExist(product_id)
 
+        #Primeiro deleta o produto e depois o atributo e o barcode, excluindo todos os valores do produto do banco
         self.db_repo.raw_delete('product',f'product_id = \"{product_id}\";')
 
         self.db_repo.raw_delete('product_attribute',f'product_id = \"{product_id}\";')
@@ -75,6 +98,7 @@ class ProductService:
         return query_result
     
     def update_product_by_id(self, product_id, params_dict):
+        """ Método para atualizar um produto com base no id """
 
         params_list_converted = []
 
@@ -143,6 +167,7 @@ class ProductService:
         return query_result
 
     def check_if_sku_exists(self, sku):
+        """ Método que checa se a sku já existe, retornando uma exception caso exista. Método usado para criação e alteração de produtos, para que valide se o usuário não está sobrescrevendo uma sku já existente """
         query_result = self.db_repo.get_by_sku(sku)
 
         if query_result:
@@ -151,7 +176,7 @@ class ProductService:
         return query_result
     
     def create_product(self, title, sku, barcodes, attributes, price, description = "NULL"):
-
+        """ Método de criação do produto com suas validações """
         #Checa se a SKU já existe. As SKUS são únicas, então se a mesma já existir, retorna uma exception de erro com o {errortext:"SKU já existe...""} de retorno ao usuário
         sku_check = self.check_if_sku_exists(sku)
         
@@ -173,27 +198,6 @@ class ProductService:
 
         return created_products_id
     
-    def get_by_fields(self, fields_values = [], where_dict_values = {}, start = 0, num = 10):
-        query_result = []
-
-        #Declara uma variável para padronizar o retorno em caso de erro
-        error_return = json.dumps({"errorText":"Can’t find product with these params {0}".format(fields_values)})
-            
-        try:
-            params = {"fields": fields_values, "where": where_dict_values}
-            
-            #Exemplo de chamada do método no repositório
-            #query_result = self.get_by_fields({"fields": ["product_id", "sku", "title"], "where": {"product_id": 1,"sku": "BOT-1234",})
-            query_result = self.db_repo.select_by_fields(params, start, num)
- 
-        except Exception as exc:
-            return error_return
-        
-        #Checa em early return se o resultado foi vazio, caso tenha retornado vazio, o produto não foi encontrado e então a service retorna o json de erro
-        if not query_result:
-            return error_return
-
-        return query_result
 
 #product_attribute Service
 class ProdAttribService:
@@ -296,7 +300,7 @@ class ProdBarcodeService:
         self.db_repo = ProdBarcodeRepository()
 
     def serialize_productbarcode_dict(self, barcodes):
-
+        """ Método igual o serialize_product, porém específico para barcode """
         list_of_barcodes = []
 
         for barcode in barcodes:
