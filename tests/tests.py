@@ -1,7 +1,5 @@
 import requests, random, os
 
-
-
 class TestHandler():
     #Método para enviar json em POST na api para criar usuário (sku gerado aleatoriamente)
     def create_new_user(self):
@@ -59,14 +57,25 @@ class TestHandler():
         str_fields_params = str_fields_params.replace(']','')
         str_fields_params = str_fields_params.replace("'","")
         str_fields_params = str_fields_params.replace(" ","")
-
         
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         url = f"http://{db_host}:5000/api/products?start=0&num={number}&fields={str_fields_params}"
       
-        r = requests.get(url, headers)
+        r = requests.get(url)
         return r.status_code
-        
-test = TestHandler()
 
-print(test.select_by_fields())
+    #Testa a func select_by_fields, checando o código de retorno http
+    def test_select_by_fields(self):
+        assert 200 == self.select_by_fields()
+
+    def select_by_id(self):
+        db_host = os.environ["DB_HOST"]
+        
+        number = random.randint(1,10)
+        print(number)
+        url = f"http://{db_host}:5000/api/products/{number}"
+        r = requests.get(url)
+        return r.status_code
+
+    def test_select_by_fields(self):
+        assert 200 == self.select_by_id()
+    

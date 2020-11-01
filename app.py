@@ -15,3 +15,4 @@ def handle_invalid_usage(error):
 app.register_blueprint(products_blueprint)
 
 app.run()
+

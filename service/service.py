@@ -1,6 +1,6 @@
 import json
-from repositories.dbrepository import BaseRepository, ProductRepository, ProdBarcodeRepository, ProdAttribRepository
-from utils.errorhandler import BaseException, ProductIdNotInteger, ProductDoesntExist, ProductNotFound, ProductParamNull, SkuAlreadyExists
+from dbrepository import BaseRepository, ProductRepository, ProdBarcodeRepository, ProdAttribRepository
+from errorhandler import BaseException, ProductIdNotInteger, ProductDoesntExist, ProductNotFound, ProductParamNull, SkuAlreadyExists
 
 # -*- coding: utf-8 -*-
 
@@ -265,6 +265,7 @@ class ProdAttribService:
         #Verifica com early return se o retorno da função foi negativo ou vazio (quando não acha o dado no banco) e caso tenha sido, da throw na exception
         if not query_result:
             raise ProductNotFound(product_id)
+
 
         #Caso não tenha problemas com o dado, retorna o mesmo
         return query_result

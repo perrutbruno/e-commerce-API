@@ -1,6 +1,6 @@
 from flask import Flask,Blueprint, request
-from service.service import ProductService, ProdAttribService, ProdBarcodeService
-from utils.errorhandler import ProductNotFound
+from service import ProductService, ProdAttribService, ProdBarcodeService
+from errorhandler import ProductNotFound
 from flask.json import jsonify
 
 
@@ -16,6 +16,7 @@ def products_by_id(product_id):
     if request.method == "GET":
         #product é o produto retornado do banco, caso exista
         product = product_service.get_product_by_id(product_id)
+        
         #Tenta serializar em dict o produto para mais tarde, retornar um json do mesmo
         serialized_product = product_service.serialize_product_dict(product)
 
@@ -23,13 +24,13 @@ def products_by_id(product_id):
         attributes = product_attrib_service.get_prod_attrib_by_id(product_id)
         #Serializa esse retorno para dicionário
         serialized_attributes = product_attrib_service.serialize_productattrib_dict(attributes)
-        
+
         #Barcode é o valor de barcodes do produto referenciado pelo id
         barcode = product_barcode_service.get_prod_barcode_by_id(product_id)
         #Serializa esse retorno para dicionário
         serialized_barcode = product_barcode_service.serialize_productbarcode_dict(barcode)
         
-        #o dicionário serialized_product recebe a chave attributes com os atributos retornados acima como valores
+        #O dicionário serialized_product recebe a chave attributes com os atributos retornados acima como valores
         serialized_product['attributes'] = serialized_attributes
         
         #O mesmo que acima, porém com barcodes

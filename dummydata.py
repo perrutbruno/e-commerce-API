@@ -1,5 +1,5 @@
 import requests, os
-from repositories.db import *
+from db import *
 
 db_host = os.environ["DB_HOST"]
 
