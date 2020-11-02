@@ -36,6 +36,7 @@ $ kubectl apply -f .
 $ mysql -u root -p
 $ CREATE TABLE hurb_test_assignment.....
 $ GRANT ALL PRIVILEGES ON . TO 'root'@'%' IDENTIFIED BY 'hurb';
+$ Fazer scale down e scale up do pod da APP
 ```
 
 (O PROJETO RODA NA PORTA 5000 DO POD)
