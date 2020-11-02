@@ -137,6 +137,8 @@ O retorno de sucesso é um json
 }
 ```
 
+## Todas as requisições possuem cobertura das exceptions
+
 ### A fazer
 *Infelizmente, algumas coisas ficaram faltando, a seguir detalho o que ainda não foi feito:*
 
