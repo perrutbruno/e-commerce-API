@@ -9,7 +9,7 @@ class DBHandler(object):
             #Pega variaveis de ambiente para manusear a conexao com o db
             cls.__db = mysql.connector.connect(
                     host=db_host,
-                    user="hurb",
+                    user="root",
                     database="hurb_test_assignment",
                     password="hurb"
                 )
