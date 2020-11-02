@@ -158,13 +158,13 @@ class ProductService:
         #Caso não tenha problemas com o dado, retorna o mesmo
         return query_result
     
-    def get_by_sku(self, sku):
-        query_result = self.db_repo.get_by_sku(sku)
+    def get_by_sku(self, sku, value):
+        query_result = self.db_repo.get_by_sku(sku, value)
 
         if not query_result:
             raise ProductNotFound(sku)
         
-        return query_result
+        return query_result[0][0]
 
     def check_if_sku_exists(self, sku):
         """ Método que checa se a sku já existe, retornando uma exception caso exista. Método usado para criação e alteração de produtos, para que valide se o usuário não está sobrescrevendo uma sku já existente """
@@ -266,6 +266,7 @@ class ProdAttribService:
         if not query_result:
             raise ProductNotFound(product_id)
 
+        print(query_result)
 
         #Caso não tenha problemas com o dado, retorna o mesmo
         return query_result

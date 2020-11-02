@@ -102,8 +102,12 @@ def products():
 
             #Usa do id retornado na função create_product para vincular ao product barcode e cria na tabela o registro
             product_barcode_service.insert_prod_barcode(created_product, barcode)
-                
-            return "45", 200
+
+            #Pega o id conforme o sku
+            created_prod_id = product_service.get_by_sku(sku, 'product_id')
+            
+            #retorna o product_id criado... Não vi muito sentido em retornar um int(45) então presumo que era pra retornar o id mesmo
+            return str(created_prod_id), 200
                 
         except KeyError as missing_param:
             return 'Todos os parâmetros devem ser preenchidos. Consulte a documentação para mais detalhes!',400
