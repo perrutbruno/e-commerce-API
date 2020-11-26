@@ -1,5 +1,4 @@
-# challenge-delta
-
+# e-commerce python API
 API com CRUD.
 
   - Inclui manifestos kubernetes para deploy do projeto e banco de dados
@@ -14,7 +13,7 @@ API com CRUD.
 
 ### Tech
  *Libs/frameworks utilizados:*
-  - FLASK, que por ser um micro-framework, segue a determinação do desafio de que quanto menos frameworks, melhor. 
+  - FLASK, que por ser um micro-framework. 
   - Driver de conexão com o mysql pymysql-connector
   - Pytest para assert dos testes
   - Módulo requests
@@ -138,11 +137,6 @@ O retorno de sucesso é um json
 }
 ```
 
-## Todas as requisições possuem cobertura das exceptions
+## Todas as requisições possuem cobertura de exceptions
 
-### A fazer
-*Infelizmente, algumas coisas ficaram faltando, a seguir detalho o que ainda não foi feito:*
-
-- Ingress para fazer o balanceamento da aplicação
-- Configuração de número de requests para HPA
 

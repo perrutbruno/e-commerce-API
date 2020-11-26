@@ -1,6 +1,6 @@
 import mysql.connector, os
 
-#Classe modelo singleton do manuseador do banco de dados
+#Classe modelo Design Pattern singleton de manuseador do banco de dados
 class DBHandler(object):
     def __new__(cls):
         if not hasattr(cls, 'instance'):
