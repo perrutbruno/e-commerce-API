@@ -13,7 +13,7 @@ API com CRUD.
 
 ### Tech
  *Libs/frameworks utilizados:*
-  - FLASK, que por ser um micro-framework. 
+  - FLASK.
   - Driver de conexão com o mysql pymysql-connector
   - Pytest para assert dos testes
   - Módulo requests
